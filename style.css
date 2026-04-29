@@ -1,0 +1,119 @@
+body {
+  margin:0;
+  background:#0b0f0d;
+  font-family: monospace;
+  color:#1eeea1;
+}
+
+.app {
+  max-width:420px;
+  margin:auto;
+  padding:16px;
+}
+
+/* HEADER */
+.title {
+  font-size:14px;
+  letter-spacing:1px;
+}
+
+.subtitle {
+  font-size:12px;
+  opacity:0.6;
+  margin-bottom:10px;
+}
+
+/* DOTS */
+#dots {
+  display:flex;
+  justify-content:center;
+  gap:6px;
+  margin:10px 0;
+}
+
+.dot {
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#123;
+}
+
+.dot.active {
+  background:#1eeea1;
+}
+
+/* COUNTDOWN */
+#countdown {
+  text-align:center;
+  font-size:64px;
+  margin:10px 0;
+}
+
+/* BUTTONS */
+.controls {
+  display:flex;
+  gap:10px;
+  margin-bottom:12px;
+}
+
+button {
+  flex:1;
+  padding:12px;
+  background:#0f1f1a;
+  color:#1eeea1;
+  border:1px solid #1eeea1;
+  border-radius:10px;
+}
+
+button.main {
+  background:#1eeea1;
+  color:#000;
+  font-weight:bold;
+}
+
+button:active {
+  transform:scale(0.95);
+}
+
+/* CANVAS */
+canvas {
+  width:100%;
+  height:clamp(120px, 30vw, 180px);
+  background:#0a1411;
+  border-radius:10px;
+  margin-bottom:12px;
+}
+
+/* CARDS */
+.cards {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+
+.card {
+  padding:12px;
+  border-radius:10px;
+  background:#0f1f1a;
+  border:1px solid #123;
+  text-align:left;
+}
+
+.card h4 {
+  margin:0;
+  font-size:12px;
+  opacity:0.6;
+}
+
+.card .value {
+  font-size:20px;
+}
+
+.card .delta {
+  font-size:12px;
+}
+
+/* COLORS */
+.ok { color:#1eeea1; }
+.warn { color:#e6d84f; }
+.bad { color:#ff5c5c; }
