@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Club Meter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600&display=swap');
+
+  :root {
+    --green: #00ff99;
+    --green-dim: #00cc77;
+    --green-dark: #004422;
+    --green-faint: #001a0d;
+    --red: #ff3355;
+    --amber: #ffaa00;
+    --bg: #030a06;
+    --bg2: #060f08;
+    --bg3: #0a1a0f;
+    --border: #0d2a18;
+    --text-muted: #2a5a3a;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-ui: 'Rajdhani', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,255,153,0.012) 2px,
+      rgba(0,255,153,0.012) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    padding: 20px 16px 40px;
+  }
+
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header h1 {
+    font-family: var(--font-ui);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: var(--green);
+  }
+  .header-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+  }
+
+  .points-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .points-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex: 0 0 auto;
+  }
+  .dots { display: flex; gap: 8px; align-items: center; }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  .dot.done { background: var(--green-dim); border-color: var(--green-dim); }
+  .dot.active { background: var(--green); border-color: var(--green); box-shadow: 0 0 6px var(--green); }
+
+  .countdown-wrap {
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 4px 0 12px;
+  }
+  #countdown {
+    font-family: var(--font-mono);
+    font-size: 64px;
+    color: var(--green);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  #countdown.recording { color: var(--red); }
+  #countdown.saved { font-size: 18px; color: var(--green-dim); letter-spacing: 0.15em; }
+  #countdown.ready { font-size: 16px; color: var(--text-muted); letter-spacing: 0.2em; }
+
+  .canvas-wrap {
+    position: relative;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg2);
+  }
+  .canvas-wrap.recording-active { border-color: rgba(255,51,85,0.4); }
+
+  .rec-indicator {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 0.1em;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 2;
+  }
+  .rec-indicator.visible { opacity: 1; }
+  .rec-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: blink 0.8s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: clamp(120px, 28vw, 180px);
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    padding: 14px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg2);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .btn:hover { border-color: var(--green-dark); color: var(--green-dim); }
+  .btn:active { transform: scale(0.96); }
+  .btn.main {
+    background: var(--green);
+    color: var(--bg);
+    border-color: var(--green);
+    font-weight: bold;
+  }
+  .btn.main:hover { background: var(--green-dim); border-color: var(--green-dim); }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  #result { display: none; }
+
+  .band-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .band-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 8px;
+    text-align: center;
+  }
+  .band-name {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .band-val { font-size: 22px; font-weight: 300; display: block; margin-bottom: 4px; }
+  .band-val.ok { color: var(--green); }
+  .band-val.over { color: var(--red); }
+  .band-val.under { color: var(--amber); }
+  .band-delta { font-size: 10px; letter-spacing: 0.05em; }
+  .band-delta.ok { color: var(--green-dark); }
+  .band-delta.over { color: rgba(255,51,85,0.6); }
+  .band-delta.under { color: rgba(255,170,0,0.6); }
+
+  .suggestions {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .sug-header {
+    background: var(--bg3);
+    padding: 8px 14px;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .sug-item {
+    padding: 10px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: 0.03em;
+  }
+  .sug-item:last-child { border-bottom: none; }
+  .sug-icon { font-size: 14px; flex-shrink: 0; }
+  .sug-item.warn-over { color: var(--red); }
+  .sug-item.warn-under { color: var(--amber); }
+  .sug-item.all-ok { color: var(--green-dim); }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  .bottom-row { display: flex; justify-content: center; }
+  .btn-reset {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    padding: 8px 16px;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.2s;
+  }
+  .btn-reset:hover { color: var(--red); }
+
+  .fade-in { animation: fadeIn 0.4s ease forwards; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <h1>CLUB METER</h1>
+    <span class="header-sub">ROOM BALANCE ANALYZER</span>
+  </div>
+
+  <div class="points-row">
+    <span class="points-label">POINT</span>
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <div class="countdown-wrap">
+    <div id="countdown" class="ready">READY</div>
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <div class="rec-indicator" id="recIndicator">
+      <div class="rec-dot"></div>REC
+    </div>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div class="controls">
+    <button class="btn" onclick="nextPoint()" id="btnNext">NEXT</button>
+    <button class="btn main" onclick="startRec()" id="btnRec">REC</button>
+    <button class="btn" onclick="analyze()" id="btnAnalyze">ANALYZE</button>
+  </div>
+
+  <div id="result"></div>
+
+  <div class="divider"></div>
+  <div class="bottom-row">
+    <button class="btn-reset" onclick="resetAll()">&#8634; reset all</button>
+  </div>
+
+</div>
+<script>
+let audioCtx, analyser, dataArray;
+let frames = [];
+let collecting = false;
+let loopId = null;
+let currentPoint = 0;
+const TOTAL_POINTS = 4;
+let allPoints = new Array(TOTAL_POINTS).fill(null);
+
+function init() {
+  renderDots();
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  drawIdle();
+}
+
+function resizeCanvas() {
+  const c = document.getElementById('canvas');
+  c.width = c.offsetWidth * (window.devicePixelRatio || 1);
+  c.height = c.offsetHeight * (window.devicePixelRatio || 1);
+}
+
+async function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  const source = audioCtx.createMediaStreamSource(stream);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 1024;
+  source.connect(analyser);
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+}
+
+async function startRec() {
+  if (collecting) return;
+  try { await initAudio(); }
+  catch(e) { setCountdown('NO MIC', false); return; }
+
+  if (loopId) { clearTimeout(loopId); loopId = null; }
+
+  frames = [];
+  collecting = true;
+  setButtons(true);
+  document.getElementById('recIndicator').classList.add('visible');
+  document.getElementById('canvasWrap').classList.add('recording-active');
+
+  let t = 10;
+  setCountdown(t, true);
+
+  const timer = setInterval(() => {
+    t--;
+    setCountdown(t, true);
+    if (t <= 0) { clearInterval(timer); stopRec(); }
+  }, 1000);
+
+  captureLoop();
+}
+
+function stopRec() {
+  collecting = false;
+  if (loopId) { clearTimeout(loopId); loopId = null; }
+  document.getElementById('recIndicator').classList.remove('visible');
+  document.getElementById('canvasWrap').classList.remove('recording-active');
+  savePoint();
+  setCountdown('SAVED', false);
+  setButtons(false);
+  renderDots();
+  setTimeout(() => { if (!collecting) setCountdown('READY', false); }, 1200);
+}
+
+function captureLoop() {
+  if (!collecting) return;
+  analyser.getByteFrequencyData(dataArray);
+  frames.push(new Float32Array(dataArray));
+  drawSpectrum(dataArray);
+  loopId = setTimeout(captureLoop, 50);
+}
+
+function savePoint() {
+  if (!frames.length) return;
+  allPoints[currentPoint] = medianFFT(trimFrames(frames));
+}
+
+function nextPoint() {
+  if (collecting) return;
+  if (currentPoint < TOTAL_POINTS - 1) {
+    currentPoint++;
+    renderDots();
+    setCountdown('READY', false);
+    drawIdle();
+    document.getElementById('result').style.display = 'none';
+  }
+}
+
+function resetAll() {
+  if (collecting) return;
+  currentPoint = 0;
+  allPoints = new Array(TOTAL_POINTS).fill(null);
+  frames = [];
+  renderDots();
+  setCountdown('READY', false);
+  drawIdle();
+  document.getElementById('result').style.display = 'none';
+}
+
+function analyze() {
+  const ready = allPoints.filter(p => p !== null);
+  if (ready.length === 0) {
+    setCountdown('NO DATA', false);
+    setTimeout(() => setCountdown('READY', false), 1500);
+    return;
+  }
+  const avg = averageFFT(ready);
+  drawSpectrum(avg);
+  const bands = analyzeBands(avg);
+  const balance = getBalance(bands);
+  renderResult(bands, balance, getSuggestions(balance));
+}
+
+function medianFFT(arr) {
+  const size = arr[0].length;
+  const res = new Float32Array(size);
+  for (let i = 0; i < size; i++) {
+    const vals = arr.map(a => a[i]).sort((a, b) => a - b);
+    res[i] = vals[Math.floor(vals.length / 2)];
+  }
+  return res;
+}
+
+function averageFFT(arr) {
+  const size = arr[0].length;
+  const res = new Float32Array(size);
+  for (let i = 0; i < size; i++) res[i] = arr.reduce((s,a) => s + a[i], 0) / arr.length;
+  return res;
+}
+
+function trimFrames(arr) {
+  const l = arr.length;
+  return arr.slice(Math.floor(l * 0.1), Math.floor(l * 0.9));
+}
+
+function analyzeBands(data) {
+  let low=0,mid=0,high=0,lc=0,mc=0,hc=0;
+  for (let i = 1; i < data.length; i++) {
+    const f = i * audioCtx.sampleRate / analyser.fftSize;
+    if (f < 120)       { low  += data[i]; lc++; }
+    else if (f < 2000) { mid  += data[i]; mc++; }
+    else if (f < 10000){ high += data[i]; hc++; }
+  }
+  return { low: lc ? low/lc : 0, mid: mc ? mid/mc : 0, high: hc ? high/hc : 0 };
+}
+
+function getBalance(b) {
+  const avg = (b.low + b.mid + b.high) / 3;
+  return { low: b.low - avg, mid: b.mid - avg, high: b.high - avg };
+}
+
+function getSuggestions(b) {
+  const T = 8, out = [];
+  if (b.low  >  T) out.push({ type:'over',  text:'ลด Bass — LOW เกิน' });
+  if (b.low  < -T) out.push({ type:'under', text:'เพิ่ม Bass — LOW ขาด' });
+  if (b.mid  >  T) out.push({ type:'over',  text:'ลด Mid — เสียงกลางอึดอัด' });
+  if (b.mid  < -T) out.push({ type:'under', text:'เพิ่ม Mid — เสียงกลางบาง' });
+  if (b.high >  T) out.push({ type:'over',  text:'ลด High — แหลมแสบ' });
+  if (b.high < -T) out.push({ type:'under', text:'เพิ่ม High — แหลมทึบ' });
+  return out;
+}
+
+function renderDots() {
+  const c = document.getElementById('dots');
+  c.innerHTML = '';
+  for (let i = 0; i < TOTAL_POINTS; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    if (allPoints[i] !== null) d.classList.add('done');
+    else if (i === currentPoint) d.classList.add('active');
+    c.appendChild(d);
+  }
+}
+
+function setCountdown(val, isRecording) {
+  const el = document.getElementById('countdown');
+  el.className = isRecording ? 'recording' : (val === 'READY' || val === 'NO DATA' || val === 'NO MIC' ? 'ready' : 'saved');
+  el.textContent = val === 'SAVED' ? 'SAVED \u2713' : val;
+}
+
+function setButtons(disabled) {
+  ['btnRec','btnNext','btnAnalyze'].forEach(id => {
+    document.getElementById(id).disabled = disabled;
+  });
+}
+
+function renderResult(bands, balance, suggestions) {
+  const r = document.getElementById('result');
+  const cls = d => Math.abs(d) <= 8 ? 'ok' : d > 0 ? 'over' : 'under';
+  const sign = d => (d >= 0 ? '+' : '') + d.toFixed(1);
+
+  const cards = ['low','mid','high'].map(k => `
+    <div class="band-card">
+      <span class="band-name">${k.toUpperCase()}</span>
+      <span class="band-val ${cls(balance[k])}">${bands[k].toFixed(0)}</span>
+      <span class="band-delta ${cls(balance[k])}">${sign(balance[k])}</span>
+    </div>`).join('');
+
+  const sugs = suggestions.length === 0
+    ? `<div class="sug-item all-ok"><span class="sug-icon">\u2713</span>Balance ดี — ระบบเสียงสมดุล</div>`
+    : suggestions.map(s => `
+        <div class="sug-item warn-${s.type}">
+          <span class="sug-icon">${s.type === 'over' ? '\u25BC' : '\u25B2'}</span>${s.text}
+        </div>`).join('');
+
+  r.style.display = 'block';
+  r.innerHTML = `
+    <div class="band-grid fade-in">${cards}</div>
+    <div class="suggestions fade-in">
+      <div class="sug-header">RECOMMENDATION</div>${sugs}
+    </div>`;
+}
+
+function drawIdle() {
+  const c = document.getElementById('canvas');
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.strokeStyle = 'rgba(0,255,153,0.08)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, c.height / 2);
+  ctx.lineTo(c.width, c.height / 2);
+  ctx.stroke();
+}
+
+function drawSpectrum(data) {
+  const c = document.getElementById('canvas');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  const barW = W / data.length;
+  for (let i = 0; i < data.length; i++) {
+    const ratio = data[i] / 255;
+    const h = ratio * H;
+    ctx.fillStyle = `rgba(0,255,153,${(0.15 + ratio * 0.7).toFixed(2)})`;
+    ctx.fillRect(i * barW, H - h, Math.max(barW - 1, 1), h);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
