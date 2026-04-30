@@ -1,22 +1,48 @@
-<div class="app">
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Club Meter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>CLUB METER</h1>
+            <span class="header-sub">ROOM BALANCE ANALYZER</span>
+        </div>
 
-  <div class="header">
-    <div class="title">CLUB SOUND BALANCER</div>
-    <div class="subtitle">MEASURING POINT</div>
-  </div>
+        <div class="points-row">
+            <span class="points-label">POINT</span>
+            <div class="dots" id="dots"></div>
+        </div>
 
-  <div id="dots"></div>
+        <div class="countdown-wrap">
+            <div id="countdown" class="ready">READY</div>
+        </div>
 
-  <div id="countdown">08</div>
+        <div class="canvas-wrap" id="canvasWrap">
+            <div class="rec-indicator" id="recIndicator">
+                <div class="rec-dot"></div>REC
+            </div>
+            <canvas id="canvas"></canvas>
+        </div>
 
-  <div class="controls">
-    <button onclick="nextPoint()">next</button>
-    <button class="main" onclick="startRec()">record</button>
-    <button onclick="analyze()">analyze</button>
-  </div>
+        <div class="controls">
+            <button class="btn" onclick="nextPoint()" id="btnNext">NEXT</button>
+            <button class="btn main" onclick="startRec()" id="btnRec">REC</button>
+            <button class="btn" onclick="analyze()" id="btnAnalyze">ANALYZE</button>
+        </div>
 
-  <canvas id="canvas"></canvas>
+        <div id="result"></div>
 
-  <div id="cards" class="cards"></div>
+        <div class="divider"></div>
+        <div class="bottom-row">
+            <button class="btn-reset" onclick="resetAll()">&#8634; reset all</button>
+        </div>
+    </div>
 
-</div>
+    <script src="script.js"></script>
+</body>
+</html>
